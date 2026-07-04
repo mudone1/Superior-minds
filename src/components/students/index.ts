@@ -5,3 +5,4 @@ export { StudentForm } from "./StudentForm";
 export { PromoteStudentModal } from "./PromoteStudentModal";
 export { TransferStudentModal } from "./TransferStudentModal";
 export { ArchiveStudentModal } from "./ArchiveStudentModal";
+export { BulkStudentUploadModal } from "./BulkStudentUploadModal";

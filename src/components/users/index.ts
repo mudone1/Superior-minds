@@ -5,3 +5,4 @@ export { UserFormModal } from "./UserFormModal";
 export { RoleAssignModal } from "./RoleAssignModal";
 export { ResetPasswordModal } from "./ResetPasswordModal";
 export { DeleteUserModal } from "./DeleteUserModal";
+export { BulkParentUploadModal } from "./BulkParentUploadModal";

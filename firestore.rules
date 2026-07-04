@@ -8,11 +8,13 @@ service cloud.firestore {
     }
 
     function myProfile() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
     }
 
     function myRole() {
-      return isSignedIn() ? myProfile().role : null;
+      return isSignedIn() && myProfile() != null ? myProfile().role : null;
     }
 
     function isSuperAdmin() {

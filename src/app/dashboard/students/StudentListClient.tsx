@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Upload, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
-import { StudentAvatar, StudentStatusBadge } from "@/components/students";
+import { StudentAvatar, StudentStatusBadge, BulkStudentUploadModal } from "@/components/students";
 import { countStudents, listStudents, STUDENTS_PAGE_SIZE } from "@/lib/firebase/students";
 import { useCanManageStudents } from "@/hooks/useCanManageStudents";
 import { CLASS_LEVELS } from "@/lib/data/classLevels";
@@ -24,6 +24,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "n
 
 export function StudentListClient({ currentUser }: StudentListClientProps) {
   const { canManage } = useCanManageStudents(currentUser.role);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   const [classFilter, setClassFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StudentStatus | "all">("active");
@@ -125,12 +126,18 @@ export function StudentListClient({ currentUser }: StudentListClientProps) {
             className="w-40"
           />
           {canManage && (
-            <Link href="/dashboard/students/new">
-              <Button>
-                <UserPlus className="h-4 w-4" />
-                Add Student
+            <>
+              <Button variant="outline" onClick={() => setBulkModalOpen(true)}>
+                <Upload className="h-4 w-4" />
+                Bulk Upload
               </Button>
-            </Link>
+              <Link href="/dashboard/students/new">
+                <Button>
+                  <UserPlus className="h-4 w-4" />
+                  Add Student
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -233,6 +240,19 @@ export function StudentListClient({ currentUser }: StudentListClientProps) {
           </div>
         )}
       </Card>
+
+      <BulkStudentUploadModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onImported={() => {
+          setPageCursors([null]);
+          setPageIndex(0);
+          fetchPage(0, null);
+          countStudents({ classLevel: classFilter, status: statusFilter })
+            .then(setTotalCount)
+            .catch(() => setTotalCount(null));
+        }}
+      />
     </div>
   );
 }

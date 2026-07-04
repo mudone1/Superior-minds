@@ -36,7 +36,7 @@ async function apiCall<TOutput>(
   return res.json() as Promise<TOutput>;
 }
 
-export function createStudent(input: StudentFormValues): Promise<{ id: string }> {
+export function createStudent(input: StudentFormValues): Promise<{ id: string; admissionNumber: string }> {
   return apiCall("/api/admin/students", "POST", input);
 }
 

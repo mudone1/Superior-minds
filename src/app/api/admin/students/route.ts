@@ -6,6 +6,7 @@ import { STUDENTS_COLLECTION } from "@/lib/firebase/students";
 import { requireApiStudentManager } from "@/lib/server/requireApiStudentManager";
 import { apiErrorResponse, ApiError } from "@/lib/server/apiError";
 import { studentSchema } from "@/lib/validation/student";
+import { getNextAdmissionNumber, admissionYearFromDate } from "@/lib/server/admissionNumber";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,15 +19,8 @@ export async function POST(request: NextRequest) {
     }
     const input = parsed.data;
 
-    const admissionNumberLower = input.admissionNumber.toLowerCase();
-    const existing = await adminDb
-      .collection(STUDENTS_COLLECTION)
-      .where("admissionNumberLower", "==", admissionNumberLower)
-      .limit(1)
-      .get();
-    if (!existing.empty) {
-      throw new ApiError(409, `Admission number "${input.admissionNumber}" is already in use.`);
-    }
+    const admissionNumber = await getNextAdmissionNumber(admissionYearFromDate(input.admissionDate));
+    const admissionNumberLower = admissionNumber.toLowerCase();
 
     let parentName: string | null = null;
     if (input.parentUid) {
@@ -42,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection(STUDENTS_COLLECTION).add({
       passportPhotoURL: null,
-      admissionNumber: input.admissionNumber,
+      admissionNumber,
       admissionNumberLower,
       surname: input.surname,
       otherNames: input.otherNames,
@@ -52,8 +46,8 @@ export async function POST(request: NextRequest) {
       state: input.state,
       lga: input.lga,
       address: input.address,
-      bloodGroup: input.bloodGroup,
-      genotype: input.genotype,
+      bloodGroup: input.bloodGroup ?? "Unknown",
+      genotype: input.genotype ?? "Unknown",
       medicalNotes: input.medicalNotes || null,
       class: input.class,
       arm: input.arm,
@@ -68,7 +62,7 @@ export async function POST(request: NextRequest) {
       createdBy: caller.uid,
     });
 
-    return NextResponse.json({ id: docRef.id });
+    return NextResponse.json({ id: docRef.id, admissionNumber });
   } catch (err) {
     return apiErrorResponse(err);
   }

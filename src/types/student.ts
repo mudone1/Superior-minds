@@ -64,9 +64,8 @@ export interface Student {
   createdBy: string; // uid of the admin/staff member who added this record
 }
 
-/** Payload for creating a new student record. */
+/** Payload for creating a new student record. The admission number is generated server-side. */
 export interface CreateStudentInput {
-  admissionNumber: string;
   surname: string;
   otherNames: string;
   gender: Gender;
@@ -74,8 +73,8 @@ export interface CreateStudentInput {
   state: string;
   lga: string;
   address: string;
-  bloodGroup: BloodGroup;
-  genotype: Genotype;
+  bloodGroup?: BloodGroup;
+  genotype?: Genotype;
   medicalNotes?: string;
   class: string;
   arm: string;

@@ -10,6 +10,7 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  Upload,
   UserPlus,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -24,6 +25,7 @@ import {
   RoleAssignModal,
   ResetPasswordModal,
   DeleteUserModal,
+  BulkParentUploadModal,
 } from "@/components/users";
 import { countUsers, listUsers, USERS_PAGE_SIZE } from "@/lib/firebase/users";
 import {
@@ -82,6 +84,7 @@ export function UserManagementClient({ currentUser }: UserManagementClientProps)
   const [resetModalUser, setResetModalUser] = useState<AppUser | null>(null);
   const [deleteModalUser, setDeleteModalUser] = useState<AppUser | null>(null);
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null);
+  const [bulkParentModalOpen, setBulkParentModalOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -192,6 +195,10 @@ export function UserManagementClient({ currentUser }: UserManagementClientProps)
             ]}
             className="w-40"
           />
+          <Button variant="outline" onClick={() => setBulkParentModalOpen(true)}>
+            <Upload className="h-4 w-4" />
+            Bulk Upload Parents
+          </Button>
           <Button onClick={() => setFormModal({ open: true, user: null })}>
             <UserPlus className="h-4 w-4" />
             Add User
@@ -392,6 +399,11 @@ export function UserManagementClient({ currentUser }: UserManagementClientProps)
         user={deleteModalUser}
         onClose={() => setDeleteModalUser(null)}
         onDeleted={refetchCurrentPage}
+      />
+      <BulkParentUploadModal
+        open={bulkParentModalOpen}
+        onClose={() => setBulkParentModalOpen(false)}
+        onImported={refetchCurrentPage}
       />
     </div>
   );

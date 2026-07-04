@@ -13,7 +13,6 @@ const guardianSchema = z
   .optional();
 
 export const studentSchema = z.object({
-  admissionNumber: z.string().trim().min(2, "Admission number is required"),
   surname: z.string().trim().min(2, "Surname is required"),
   otherNames: z.string().trim().min(2, "Other names are required"),
   gender: z.enum(GENDERS, { errorMap: () => ({ message: "Choose a gender" }) }),
@@ -21,8 +20,8 @@ export const studentSchema = z.object({
   state: z.string().trim().min(2, "State is required"),
   lga: z.string().trim().min(2, "LGA is required"),
   address: z.string().trim().min(5, "Address is required"),
-  bloodGroup: z.enum(BLOOD_GROUPS),
-  genotype: z.enum(GENOTYPES),
+  bloodGroup: z.enum(BLOOD_GROUPS).optional(),
+  genotype: z.enum(GENOTYPES).optional(),
   medicalNotes: z.string().trim().optional(),
   class: z.string().trim().min(1, "Class is required"),
   arm: z.string().trim().min(1, "Arm is required"),
@@ -33,8 +32,8 @@ export const studentSchema = z.object({
 
 export type StudentFormValues = z.infer<typeof studentSchema>;
 
-/** Edit mode omits admissionNumber — it's permanent once a record exists — and adds the photo URL, which is set via a separate upload step rather than typed in by hand. */
-export const editStudentSchema = studentSchema.omit({ admissionNumber: true }).extend({
+/** Edit mode never touches admissionNumber — it's permanent once a record exists — and adds the photo URL, which is set via a separate upload step rather than typed in by hand. */
+export const editStudentSchema = studentSchema.extend({
   passportPhotoURL: z.string().url().nullable().optional(),
 });
 export type EditStudentFormValues = z.infer<typeof editStudentSchema>;

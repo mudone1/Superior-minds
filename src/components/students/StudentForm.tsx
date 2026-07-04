@@ -15,7 +15,7 @@ import { CLASS_LEVELS } from "@/lib/data/classLevels";
 import { studentSchema, editStudentSchema } from "@/lib/validation/student";
 import { createStudent, updateStudent, ApiClientError } from "@/lib/api/students";
 import { uploadStudentPassport } from "@/lib/firebase/storage";
-import { GENDERS, BLOOD_GROUPS, GENOTYPES, type Student, type Guardian } from "@/types";
+import { GENDERS, type Student, type Guardian } from "@/types";
 
 interface StudentFormProps {
   mode: "create" | "edit";
@@ -28,7 +28,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
   const router = useRouter();
   const isEdit = mode === "edit";
 
-  const [admissionNumber, setAdmissionNumber] = useState(student?.admissionNumber ?? "");
   const [surname, setSurname] = useState(student?.surname ?? "");
   const [otherNames, setOtherNames] = useState(student?.otherNames ?? "");
   const [gender, setGender] = useState(student?.gender ?? "Male");
@@ -36,9 +35,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
   const [state, setState] = useState(student?.state ?? "");
   const [lga, setLga] = useState(student?.lga ?? "");
   const [address, setAddress] = useState(student?.address ?? "");
-  const [bloodGroup, setBloodGroup] = useState(student?.bloodGroup ?? "Unknown");
-  const [genotype, setGenotype] = useState(student?.genotype ?? "Unknown");
-  const [medicalNotes, setMedicalNotes] = useState(student?.medicalNotes ?? "");
   const [classLevel, setClassLevel] = useState(student?.class ?? CLASS_LEVELS[0] ?? "");
   const [arm, setArm] = useState(student?.arm ?? "");
   const [parent, setParent] = useState<{ uid: string; name: string } | null>(
@@ -98,9 +94,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
           state,
           lga,
           address,
-          bloodGroup,
-          genotype,
-          medicalNotes: medicalNotes || undefined,
           class: classLevel,
           arm,
           parentUid: parent?.uid ?? null,
@@ -116,7 +109,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
         id = student.id;
       } else {
         const parsed = studentSchema.safeParse({
-          admissionNumber,
           surname,
           otherNames,
           gender,
@@ -124,9 +116,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
           state,
           lga,
           address,
-          bloodGroup,
-          genotype,
-          medicalNotes: medicalNotes || undefined,
           class: classLevel,
           arm,
           parentUid: parent?.uid ?? null,
@@ -203,15 +192,24 @@ export function StudentForm({ mode, student }: StudentFormProps) {
             Personal Information
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Admission Number"
-              required
-              disabled={isEdit}
-              value={admissionNumber}
-              onChange={(e) => setAdmissionNumber(e.target.value)}
-              error={errors.admissionNumber}
-              hint={isEdit ? "Admission number can't be changed once set." : undefined}
-            />
+            {isEdit ? (
+              <Input
+                label="Admission Number"
+                required
+                disabled
+                value={student?.admissionNumber ?? ""}
+                hint="Admission number can't be changed once set."
+              />
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink-700">
+                  Admission Number
+                </label>
+                <div className="flex h-11 items-center rounded-md border border-dashed border-ink-300/60 bg-ink/5 px-3 text-sm text-ink-500">
+                  Auto-generated on save (e.g. SMA/{new Date().getFullYear().toString().slice(-2)}N001)
+                </div>
+              </div>
+            )}
             <Select
               label="Gender"
               required
@@ -289,37 +287,6 @@ export function StudentForm({ mode, student }: StudentFormProps) {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             error={errors.address}
-          />
-        </CardBody>
-      </Card>
-
-      {/* Medical */}
-      <Card>
-        <CardBody className="flex flex-col gap-4">
-          <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Medical Information
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Blood Group"
-              required
-              value={bloodGroup}
-              onChange={(e) => setBloodGroup(e.target.value as (typeof BLOOD_GROUPS)[number])}
-              options={BLOOD_GROUPS.map((b) => ({ value: b, label: b }))}
-            />
-            <Select
-              label="Genotype"
-              required
-              value={genotype}
-              onChange={(e) => setGenotype(e.target.value as (typeof GENOTYPES)[number])}
-              options={GENOTYPES.map((g) => ({ value: g, label: g }))}
-            />
-          </div>
-          <Input
-            label="Medical Notes"
-            value={medicalNotes ?? ""}
-            onChange={(e) => setMedicalNotes(e.target.value)}
-            placeholder="Allergies, conditions, medications — optional"
           />
         </CardBody>
       </Card>
