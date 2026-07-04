@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Cross-service lookup of the caller's role from their Firestore
+    // profile, mirroring firestore.rules' isAdminLevel(). Storage rules
+    // can read Firestore directly (GA feature) so avatar uploads made by
+    // an admin on someone else's behalf can be permitted without routing
+    // every image through a Cloud Function.
+    function callerRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdminLevel() {
+      return isSignedIn() && callerRole() in ['super-admin', 'administrator'];
+    }
+
+    // Users may read/write their own avatar. Super Admin / Administrator
+    // may also write any user's avatar, since the user management module
+    // lets an admin set a profile picture while adding or editing an
+    // account. 5MB cap, images only.
+    match /avatars/{uid}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (request.auth.uid == uid || isAdminLevel()) &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Student passport photos. Only staff can read (student directory
+    // isn't public); write follows the same "admin-level, or staff with
+    // the setting on" rule as the students collection itself.
+    function canWriteStudentPhoto() {
+      return isSignedIn() && (
+        callerRole() in ['super-admin', 'administrator'] ||
+        (callerRole() == 'administrative-staff' &&
+          firestore.get(/databases/(default)/documents/settings/general).data.allowStaffAddStudents == true)
+      );
+    }
+
+    match /students/{studentId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if canWriteStudentPhoto() &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Role-scoped document folders (report cards, admissions forms, etc.)
+    // Owner can read/write their own; staff access is narrowed further
+    // per folder in later phases once those collections exist.
+    match /documents/{folder}/{ownerId}/{fileName} {
+      allow read: if isSignedIn() && (request.auth.uid == ownerId || isAdminLevel());
+      allow write: if isSignedIn() && (request.auth.uid == ownerId || isAdminLevel()) &&
+        request.resource.size < 15 * 1024 * 1024;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

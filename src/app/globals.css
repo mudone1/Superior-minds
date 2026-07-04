@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper text-ink antialiased;
+  }
+
+  ::selection {
+    @apply bg-brass-100 text-ink;
+  }
+
+  :focus-visible {
+    outline-color: theme("colors.indigo.DEFAULT");
+  }
+}

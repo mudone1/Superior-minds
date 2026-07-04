@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function myRole() {
+      return isSignedIn() ? myProfile().role : null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && myRole() == 'super-admin';
+    }
+
+    function isAdminLevel() {
+      return isSignedIn() && myRole() in ['super-admin', 'administrator'];
+    }
+
+    function isStaff() {
+      return isSignedIn() &&
+        myRole() in ['super-admin', 'administrator', 'administrative-staff', 'teacher'];
+    }
+
+    function isAdminLevelRole(role) {
+      return role in ['super-admin', 'administrator'];
+    }
+
+    // Administrative Staff may manage students only when the school has
+    // explicitly turned that on in Settings. Reading a nonexistent
+    // settings doc throws inside get(), which Firestore rules treat as a
+    // failed condition — safely defaulting to "not allowed" before an
+    // Administrator has ever saved the setting.
+    function canManageStudents() {
+      return isAdminLevel() ||
+        (isSignedIn() && myRole() == 'administrative-staff' &&
+          get(/databases/$(database)/documents/settings/general).data.allowStaffAddStudents == true);
+    }
+
+    // An Administrator (not Super Admin) may only touch accounts whose
+    // role — before and after the write — is NOT admin-level. Super Admin
+    // is unrestricted. This mirrors the Cloud Functions callables, which
+    // are the primary write path; these rules are the defense-in-depth
+    // backstop for any direct Firestore access.
+    function canManageTargetRole(role) {
+      return isSuperAdmin() || (isAdminLevel() && !isAdminLevelRole(role));
+    }
+
+    // ── users/{uid} ────────────────────────────────────────────────────
+    // Everyone can read their own profile. Staff can read any profile
+    // (needed for rosters, staff directories, the user management list,
+    // search, and filters). Only Super Admin / Administrator can create
+    // or edit accounts, and never accounts more privileged than what an
+    // Administrator is allowed to touch. A user may update a narrow set
+    // of their own fields (e.g. displayName) but never their own role or
+    // status.
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isStaff());
+
+      allow create: if isAdminLevel() && canManageTargetRole(request.resource.data.role);
+
+      allow update: if
+        (isAdminLevel() &&
+          canManageTargetRole(resource.data.role) &&
+          canManageTargetRole(request.resource.data.role)) ||
+        (isSignedIn() && request.auth.uid == uid &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.status == resource.data.status);
+
+      allow delete: if isAdminLevel() && canManageTargetRole(resource.data.role);
+    }
+
+    // ── students/{id} ──────────────────────────────────────────────────
+    // Any staff role (everyone except Parent) can read the directory —
+    // needed for rosters, search, and class views. Only Administrator /
+    // Super Admin can write, unless the school has turned on the
+    // Administrative Staff permission in Settings. No delete is exposed
+    // anywhere in the app — records are archived (a status update), never
+    // hard-deleted, so this stays closed even for admins.
+    match /students/{studentId} {
+      allow read: if isStaff();
+      allow create: if canManageStudents();
+      allow update: if canManageStudents();
+      allow delete: if false;
+    }
+
+    // ── settings/{docId} ───────────────────────────────────────────────
+    // Any staff role can read (needed to know whether to show the "Add
+    // Student" button). Only Administrator / Super Admin can write.
+    match /settings/{docId} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    // Everything else defaults closed until later phases define the
+    // classes / grades / fees collections explicitly.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
