@@ -19,7 +19,7 @@ const roleCards = [
   },
   {
     title: "Administrator",
-    description: "Manages staff, students, and the school's day-to-day operations.",
+    description: "Manages staff, students, and the school&apos;s day-to-day operations.",
     icon: Users,
   },
   {
@@ -34,7 +34,7 @@ const roleCards = [
   },
   {
     title: "Parent",
-    description: "Follows a child's attendance, grades, and fee statements.",
+    description: "Follows a child&apos;s attendance, grades, and fee statements.",
     icon: Users,
   },
 ];
@@ -128,13 +128,12 @@ export default function HomePage() {
         <section id="about" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <h2 className="font-display text-3xl font-semibold text-ink">
-              Built like a school's own record book
+              Built like a school&apos;s own record book
             </h2>
             <p className="mt-4 text-ink-500">
               Every account belongs to exactly one role, and every role opens straight to the
               dashboard built for it. Nothing to configure, nothing to guess — sign in, and the
-              system already knows what you're here to do.
-            </p>
+              system already knows what you&apos;re here to do.            </p>
           </div>
         </section>
 

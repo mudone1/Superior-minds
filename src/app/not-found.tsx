@@ -15,8 +15,7 @@ export default function NotFound() {
           This page isn&apos;t on file
         </h1>
         <p className="mt-2 max-w-sm text-sm text-ink-500">
-          The page you're looking for doesn't exist or may have moved.
-        </p>
+The page you&apos;re looking for doesn&apos;t exist or may have moved.        </p>
       </div>
       <Link href={ROUTES.home}>
         <Button>Return home</Button>
