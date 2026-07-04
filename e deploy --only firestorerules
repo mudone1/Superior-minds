@@ -1,0 +1,10 @@
+[33me785cef[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge branch 'main' of https://github.com/mudone1/Superior-minds
+[33md42d3ed[m Fix student permissions error; auto-generate admission numbers; add bulk student/parent Excel upload; remove medical info from student form
+[33m7b1a3ce[m Merge pull request #1 from mudone1/vercel/react-server-components-cve-vu-q9tux2
+[33m5d01cb8[m[33m ([m[1;31morigin/vercel/react-server-components-cve-vu-q9tux2[m[33m)[m Merge branch 'main' into vercel/react-server-components-cve-vu-q9tux2
+[33m6322441[m Fix PWA manifest, regenerate app icons, and improve Apple PWA support
+[33mc2fd997[m Add PWA manifest and app icons
+[33mc2b6436[m Fix React Server Components CVE vulnerabilities
+[33m00fb877[m Merge branch 'main' of https://github.com/mudone1/Superior-minds
+[33mb652328[m Fix ESLint apostrophe errors
+[33mf4636a5[m Delete Superior_mind_academy_phase3.zip
