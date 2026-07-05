@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/app/**/*.{ts,tsx}",
     "./src/components/**/*.{ts,tsx}",
@@ -44,11 +45,31 @@ const config: Config = {
           DEFAULT: "#A23B3B", // error / alert
           50: "#F8EAEA",
         },
+        // Marketing site palette (public landing page) — deliberately namespaced
+        // under `royal`/`gold` so it never collides with the dashboard's
+        // `indigo`/`brass` ledger theme used throughout the authenticated app.
+        royal: {
+          DEFAULT: "#123C8C",
+          50: "#EAF0FC",
+          100: "#CFDEF7",
+          400: "#3861B0",
+          600: "#0E2F6E",
+          700: "#0A2352",
+          900: "#050F24",
+        },
+        gold: {
+          DEFAULT: "#D4AF37",
+          50: "#FBF6E7",
+          100: "#F3E6BB",
+          400: "#DDBE5C",
+          600: "#B08F22",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
         body: ["var(--font-body)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+        jakarta: ["var(--font-jakarta)", "system-ui", "sans-serif"],
       },
       backgroundImage: {
         "ledger-lines":

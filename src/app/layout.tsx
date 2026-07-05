@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Inter, IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -87,11 +87,35 @@ const mono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
 export const metadata: Metadata = {
-  title: "Superior Minds Academy — School Management System",
+  metadataBase: new URL("https://superior-minds.vercel.app"),
+  title: "Superior Minds Academy — Minna, Nigeria",
   description:
-    "The record-keeping system of Superior Minds Academy: admissions, staff, classes, and family communication in one trusted ledger.",
+    "Superior Minds Academy is a premier nursery and primary school in Minna, Nigeria, combining academic excellence, character development and modern teaching methods to prepare every child for lifelong success.",
+  keywords: [
+    "Superior Minds Academy",
+    "Minna school",
+    "Nigeria primary school",
+    "Nigeria nursery school",
+    "best private school Minna",
+  ],
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Superior Minds Academy — Minna, Nigeria",
+    description:
+      "Where excellence begins, character grows, and every child is inspired to achieve greatness.",
+    url: "https://superior-minds.vercel.app",
+    siteName: "Superior Minds Academy",
+    images: [{ url: "/images/marketing/hero-future-doctor.jpg", width: 1280, height: 720 }],
+    locale: "en_NG",
+    type: "website",
+  },
   icons: {
     icon: [
       { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
@@ -130,7 +154,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable} ${jakarta.variable}`}>
       <body className="font-body">
         <AuthProvider>{children}</AuthProvider>
       </body>
