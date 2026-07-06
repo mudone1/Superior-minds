@@ -1,7 +1,12 @@
 import { GENDERS, type Gender } from "@/types";
-import { CLASS_LEVELS } from "@/lib/data/classLevels";
 import { NIGERIAN_STATES, getLgasForState } from "@/lib/data/nigeria";
 import type { TemplateSheet } from "@/lib/excel/workbook";
+
+/** Valid classes and, per class, valid arm names — sourced live from Academic Setup, not hardcoded. */
+export interface ClassArmOptions {
+  classNames: string[];
+  armNamesByClass: Record<string, string[]>;
+}
 
 /**
  * The exact column order for the bulk student upload template. Order
@@ -90,7 +95,8 @@ function normalizeDate(value: string): string | null {
  * boundary.
  */
 export function validateStudentBulkRows(
-  rawRows: Record<string, string>[]
+  rawRows: Record<string, string>[],
+  classArmOptions: ClassArmOptions
 ): StudentBulkValidationResult {
   const validRows: StudentBulkRow[] = [];
   const rowErrors: StudentBulkRowError[] = [];
@@ -129,8 +135,19 @@ export function validateStudentBulkRows(
     }
 
     const classValue = raw["Class"]?.trim();
-    if (classValue && !CLASS_LEVELS.includes(classValue)) {
-      errors.push(`Class "${classValue}" isn't a recognized class (see the Instructions sheet)`);
+    const classExists = classValue ? classArmOptions.classNames.includes(classValue) : false;
+    if (classValue && !classExists) {
+      errors.push(
+        `Class "${classValue}" isn't set up yet — add it under Academic Setup first, or check spelling (see the Instructions sheet)`
+      );
+    }
+
+    const armValue = raw["Arm"]?.trim();
+    if (armValue && classExists) {
+      const validArms = classArmOptions.armNamesByClass[classValue ?? ""] ?? [];
+      if (!validArms.includes(armValue)) {
+        errors.push(`Arm "${armValue}" isn't set up for ${classValue} yet — add it under Academic Setup first`);
+      }
     }
 
     const stateValue = raw["State"]?.trim();
@@ -176,7 +193,7 @@ export function validateStudentBulkRows(
 }
 
 /** Builds the downloadable .xlsx template: a filled-in example row plus an Instructions sheet listing valid values. */
-export function buildStudentBulkTemplate(): TemplateSheet[] {
+export function buildStudentBulkTemplate(classNames: string[]): TemplateSheet[] {
   const templateSheet: TemplateSheet = {
     name: "Template",
     rows: [
@@ -217,8 +234,8 @@ export function buildStudentBulkTemplate(): TemplateSheet[] {
       ["Gender", "Yes", 'Exactly "Male" or "Female"'],
       ["Date of Birth", "Yes", "Format: YYYY-MM-DD (e.g. 2015-03-12)"],
       ["Admission Date", "Yes", "Format: YYYY-MM-DD (e.g. 2024-09-09)"],
-      ["Class", "Yes", `One of: ${CLASS_LEVELS.join(", ")}`],
-      ["Arm", "Yes", "e.g. A, Gold, Diamond"],
+      ["Class", "Yes", classNames.length > 0 ? `One of: ${classNames.join(", ")}` : "Set up classes under Academic Setup first"],
+      ["Arm", "Yes", "Must be an arm already set up under Academic Setup for that class"],
       ["State", "Yes", "Full Nigerian state name, e.g. Lagos"],
       ["LGA", "Yes", "Must belong to the State entered"],
       ["Address", "Yes", ""],

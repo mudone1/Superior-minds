@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Camera } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -11,11 +11,11 @@ import { Alert } from "@/components/ui/Alert";
 import { StudentAvatar } from "./StudentAvatar";
 import { ParentPicker } from "./ParentPicker";
 import { NIGERIAN_STATES, getLgasForState } from "@/lib/data/nigeria";
-import { CLASS_LEVELS } from "@/lib/data/classLevels";
+import { listSchoolClasses, listClassArms } from "@/lib/firebase/academic";
 import { studentSchema, editStudentSchema } from "@/lib/validation/student";
 import { createStudent, updateStudent, ApiClientError } from "@/lib/api/students";
 import { uploadStudentPassport } from "@/lib/firebase/storage";
-import { GENDERS, type Student, type Guardian } from "@/types";
+import { GENDERS, type Student, type Guardian, type SchoolClass, type ClassArm } from "@/types";
 
 interface StudentFormProps {
   mode: "create" | "edit";
@@ -35,8 +35,11 @@ export function StudentForm({ mode, student }: StudentFormProps) {
   const [state, setState] = useState(student?.state ?? "");
   const [lga, setLga] = useState(student?.lga ?? "");
   const [address, setAddress] = useState(student?.address ?? "");
-  const [classLevel, setClassLevel] = useState(student?.class ?? CLASS_LEVELS[0] ?? "");
+  const [classLevel, setClassLevel] = useState(student?.class ?? "");
   const [arm, setArm] = useState(student?.arm ?? "");
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [arms, setArms] = useState<ClassArm[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
   const [parent, setParent] = useState<{ uid: string; name: string } | null>(
     student?.parentUid && student?.parentName ? { uid: student.parentUid, name: student.parentName } : null
   );
@@ -55,6 +58,48 @@ export function StudentForm({ mode, student }: StudentFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listSchoolClasses()
+      .then((c) => {
+        if (cancelled) return;
+        setClasses(c);
+        // Default to the first configured class only for a brand-new
+        // student — editing an existing one keeps whatever class is
+        // already on the record, even if it's since been renamed/removed.
+        if (!isEdit && !classLevel && c.length > 0) {
+          setClassLevel(c[0]!.name);
+        }
+      })
+      .catch(() => setFormError("Couldn't load classes. Refresh and try again."))
+      .finally(() => {
+        if (!cancelled) setLoadingClasses(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const match = classes.find((c) => c.name === classLevel);
+    if (!match) {
+      setArms([]);
+      return;
+    }
+    let cancelled = false;
+    listClassArms(match.id)
+      .then((a) => {
+        if (!cancelled) setArms(a);
+      })
+      .catch(() => {
+        if (!cancelled) setArms([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [classLevel, classes]);
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -297,24 +342,41 @@ export function StudentForm({ mode, student }: StudentFormProps) {
           <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-ink-500">
             Academic
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Select
-              label="Class"
-              required
-              value={classLevel}
-              onChange={(e) => setClassLevel(e.target.value)}
-              options={CLASS_LEVELS.map((c) => ({ value: c, label: c }))}
-              error={errors.class}
-            />
-            <Input
-              label="Arm"
-              required
-              value={arm}
-              onChange={(e) => setArm(e.target.value)}
-              placeholder="e.g. A, Gold, Diamond"
-              error={errors.arm}
-            />
-          </div>
+          {classes.length === 0 && !loadingClasses ? (
+            <Alert variant="info">
+              No classes are set up yet. Ask an Administrator to add classes and arms under
+              Academic Setup before registering students.
+            </Alert>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Class"
+                required
+                value={classLevel}
+                onChange={(e) => {
+                  setClassLevel(e.target.value);
+                  setArm("");
+                }}
+                options={classes
+                  .slice()
+                  .sort((a, b) => a.order - b.order)
+                  .map((c) => ({ value: c.name, label: c.name }))}
+                placeholder={loadingClasses ? "Loading classes…" : "Select a class"}
+                disabled={loadingClasses}
+                error={errors.class}
+              />
+              <Select
+                label="Arm"
+                required
+                value={arm}
+                onChange={(e) => setArm(e.target.value)}
+                options={arms.map((a) => ({ value: a.name, label: a.name }))}
+                placeholder={classLevel ? "Select an arm" : "Select a class first"}
+                disabled={!classLevel || arms.length === 0}
+                error={errors.arm}
+              />
+            </div>
+          )}
         </CardBody>
       </Card>
 

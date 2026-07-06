@@ -12,6 +12,8 @@ import {
   Banknote,
   Settings,
   UserRound,
+  CalendarCheck,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,8 @@ const ICONS: Record<DashboardNavItem["icon"], LucideIcon> = {
   settings: Settings,
   "shield-check": Settings,
   "user-round": UserRound,
+  "calendar-check": CalendarCheck,
+  bell: Bell,
 };
 
 interface SidebarProps {

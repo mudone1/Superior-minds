@@ -9,9 +9,9 @@ import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
 import { StudentAvatar, StudentStatusBadge, BulkStudentUploadModal } from "@/components/students";
 import { countStudents, listStudents, STUDENTS_PAGE_SIZE } from "@/lib/firebase/students";
+import { listSchoolClasses } from "@/lib/firebase/academic";
 import { useCanManageStudents } from "@/hooks/useCanManageStudents";
-import { CLASS_LEVELS } from "@/lib/data/classLevels";
-import { STUDENT_STATUSES, STUDENT_STATUS_LABELS, type Student, type StudentStatus, type SessionUser } from "@/types";
+import { STUDENT_STATUSES, STUDENT_STATUS_LABELS, type Student, type StudentStatus, type SessionUser, type SchoolClass } from "@/types";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 type Cursor = QueryDocumentSnapshot<DocumentData> | null;
@@ -25,6 +25,13 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "n
 export function StudentListClient({ currentUser }: StudentListClientProps) {
   const { canManage } = useCanManageStudents(currentUser.role);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+
+  useEffect(() => {
+    listSchoolClasses()
+      .then(setClasses)
+      .catch(() => setClasses([]));
+  }, []);
 
   const [classFilter, setClassFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StudentStatus | "all">("active");
@@ -113,7 +120,10 @@ export function StudentListClient({ currentUser }: StudentListClientProps) {
           <Select
             value={classFilter}
             onChange={(e) => setClassFilter(e.target.value)}
-            options={[{ value: "all", label: "All Classes" }, ...CLASS_LEVELS.map((c) => ({ value: c, label: c }))]}
+            options={[
+              { value: "all", label: "All Classes" },
+              ...classes.slice().sort((a, b) => a.order - b.order).map((c) => ({ value: c.name, label: c.name })),
+            ]}
             className="w-40"
           />
           <Select

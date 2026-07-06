@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -9,9 +9,11 @@ import { downloadWorkbook, parseFirstSheetRows } from "@/lib/excel/workbook";
 import {
   buildStudentBulkTemplate,
   validateStudentBulkRows,
+  type ClassArmOptions,
   type StudentBulkRow,
   type StudentBulkRowError,
 } from "@/lib/validation/studentBulk";
+import { listSchoolClasses, listClassArms } from "@/lib/firebase/academic";
 
 interface BulkStudentUploadModalProps {
   open: boolean;
@@ -28,7 +30,31 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
   const [rowErrors, setRowErrors] = useState<StudentBulkRowError[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [importedCount, setImportedCount] = useState(0);
+  const [classArmOptions, setClassArmOptions] = useState<ClassArmOptions | null>(null);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const classes = await listSchoolClasses();
+        const armLists = await Promise.all(classes.map((c) => listClassArms(c.id)));
+        if (cancelled) return;
+        const armNamesByClass: Record<string, string[]> = {};
+        classes.forEach((c, i) => {
+          armNamesByClass[c.name] = (armLists[i] ?? []).map((a) => a.name);
+        });
+        setClassArmOptions({ classNames: classes.map((c) => c.name), armNamesByClass });
+      } catch {
+        if (!cancelled) setOptionsError("Couldn't load your school's classes and arms.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   function reset() {
     setStage("idle");
@@ -46,12 +72,16 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
   }
 
   function handleDownloadTemplate() {
-    downloadWorkbook("SMA-Student-Bulk-Upload-Template.xlsx", buildStudentBulkTemplate());
+    downloadWorkbook("SMA-Student-Bulk-Upload-Template.xlsx", buildStudentBulkTemplate(classArmOptions?.classNames ?? []));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!classArmOptions) {
+      setFormError("Still loading your school's classes — try again in a moment.");
+      return;
+    }
     setFileName(file.name);
     setFormError(null);
     setStage("parsing");
@@ -63,7 +93,7 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
         setStage("idle");
         return;
       }
-      const { validRows: valid, rowErrors: errs } = validateStudentBulkRows(rawRows);
+      const { validRows: valid, rowErrors: errs } = validateStudentBulkRows(rawRows, classArmOptions);
       setValidRows(valid);
       setRowErrors(errs);
       setStage("reviewing");
@@ -103,6 +133,13 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
     <Modal open={open} onClose={handleClose} title="Bulk Upload Students" size="lg">
       <div className="flex flex-col gap-5">
         {formError && <Alert variant="error">{formError}</Alert>}
+        {optionsError && <Alert variant="error">{optionsError}</Alert>}
+        {classArmOptions && classArmOptions.classNames.length === 0 && (
+          <Alert variant="info">
+            No classes are set up yet. Add classes and arms under Academic Setup before bulk
+            uploading students.
+          </Alert>
+        )}
 
         {stage === "done" ? (
           <Alert variant="success">
@@ -116,7 +153,14 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
                 Fill it in following the column order and Instructions sheet. Admission numbers you
                 enter are used as-is — they are not auto-generated for bulk uploads.
               </p>
-              <Button type="button" variant="outline" size="sm" className="mt-3" onClick={handleDownloadTemplate}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={handleDownloadTemplate}
+                disabled={!classArmOptions}
+              >
                 <Download className="h-4 w-4" />
                 Download Template
               </Button>
@@ -132,6 +176,7 @@ export function BulkStudentUploadModal({ open, onClose, onImported }: BulkStuden
                 className="mt-3"
                 onClick={() => fileInputRef.current?.click()}
                 isLoading={stage === "parsing"}
+                disabled={!classArmOptions}
               >
                 <Upload className="h-4 w-4" />
                 {fileName ?? "Choose File"}

@@ -100,6 +100,72 @@ service cloud.firestore {
       allow write: if isAdminLevel();
     }
 
+    // ── Academic Setup ─────────────────────────────────────────────────
+    // Sessions, terms, classes, arms, subjects, and the three assignment
+    // relationships (class↔subject curriculum, class-arm homeroom
+    // teacher, teacher↔subject-per-arm). Any staff role can read — the
+    // Student module and future Teacher Portal both need this data —
+    // but only Administrator / Super Admin can create, edit, or remove
+    // it, per the brief ("Administrator should manage").
+    match /academicSessions/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /terms/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /classes/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /classArms/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /subjects/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /classSubjects/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /classTeachers/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    match /teacherSubjectAssignments/{id} {
+      allow read: if isStaff();
+      allow write: if isAdminLevel();
+    }
+
+    // ── Notifications / Push ──────────────────────────────────────────
+    // Any signed-in account can read notifications (client-side queries
+    // filter to "is this actually addressed to me" — role/uid targeting
+    // isn't a secrecy boundary, just an inbox filter) and can mark one
+    // read by adding their own uid to readBy. Only Administrator / Super
+    // Admin can compose and send new ones.
+    match /notifications/{id} {
+      allow read: if isSignedIn();
+      allow create: if isAdminLevel();
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readBy"]);
+      allow delete: if isAdminLevel();
+    }
+
+    // Each user manages only their own device push tokens.
+    match /pushTokens/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
     // Everything else defaults closed until later phases define the
     // classes / grades / fees collections explicitly.
     match /{document=**} {

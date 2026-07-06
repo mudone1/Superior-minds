@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { LogOut, Menu, ChevronDown } from "lucide-react";
+import { LogOut, Menu, ChevronDown, Home } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { getInitials, cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface DashboardTopbarProps {
   title: string;
@@ -33,6 +34,15 @@ export function DashboardTopbar({ title, onMenuClick }: DashboardTopbarProps) {
     router.replace(ROUTES.login);
   }
 
+  async function handleBackToSite() {
+    // Logging out here is deliberate, not incidental: leaving the
+    // dashboard for the public site means the next visit to any
+    // /dashboard route must go through sign-in again, same as the
+    // "Sign out" action below.
+    await logout();
+    router.replace(ROUTES.home);
+  }
+
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink-300/20 bg-white px-4 sm:px-6">
       <div className="flex items-center gap-3">
@@ -47,7 +57,9 @@ export function DashboardTopbar({ title, onMenuClick }: DashboardTopbarProps) {
         <h1 className="font-display text-lg font-semibold text-ink">{title}</h1>
       </div>
 
-      <div className="relative" ref={menuRef}>
+      <div className="flex items-center gap-1">
+        <NotificationBell />
+        <div className="relative" ref={menuRef}>
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -77,6 +89,15 @@ export function DashboardTopbar({ title, onMenuClick }: DashboardTopbarProps) {
           </div>
           <button
             type="button"
+            onClick={handleBackToSite}
+            role="menuitem"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-ink-700 hover:bg-ink/5"
+          >
+            <Home className="h-4 w-4" aria-hidden="true" />
+            Back to Landing Page
+          </button>
+          <button
+            type="button"
             onClick={handleLogout}
             role="menuitem"
             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose hover:bg-rose-50"
@@ -86,6 +107,7 @@ export function DashboardTopbar({ title, onMenuClick }: DashboardTopbarProps) {
           </button>
         </div>
       </div>
+    </div>
     </header>
   );
 }

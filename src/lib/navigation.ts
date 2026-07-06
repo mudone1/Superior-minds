@@ -13,7 +13,9 @@ export interface DashboardNavItem {
     | "banknote"
     | "settings"
     | "shield-check"
-    | "user-round";
+    | "user-round"
+    | "calendar-check"
+    | "bell";
 }
 
 /**
@@ -28,30 +30,37 @@ export const DASHBOARD_NAV: Record<UserRole, DashboardNavItem[]> = {
     { label: "Schools & Campuses", href: "/dashboard/super-admin", icon: "graduation-cap" },
     { label: "User Management", href: "/dashboard/users", icon: "users" },
     { label: "Students", href: "/dashboard/students", icon: "graduation-cap" },
+    { label: "Academic Setup", href: "/dashboard/academic-setup", icon: "calendar-check" },
     { label: "System Settings", href: "/dashboard/settings", icon: "settings" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
   administrator: [
     { label: "Overview", href: "/dashboard/administrator", icon: "layout-dashboard" },
     { label: "User Management", href: "/dashboard/users", icon: "user-cog" },
     { label: "Students", href: "/dashboard/students", icon: "graduation-cap" },
+    { label: "Academic Setup", href: "/dashboard/academic-setup", icon: "calendar-check" },
     { label: "Settings", href: "/dashboard/settings", icon: "settings" },
     { label: "Finance", href: "/dashboard/administrator", icon: "banknote" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
   "administrative-staff": [
     { label: "Overview", href: "/dashboard/administrative-staff", icon: "layout-dashboard" },
     { label: "Students", href: "/dashboard/students", icon: "graduation-cap" },
     { label: "Admissions", href: "/dashboard/administrative-staff", icon: "clipboard-list" },
     { label: "Records", href: "/dashboard/administrative-staff", icon: "book-open" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
   teacher: [
     { label: "Overview", href: "/dashboard/teacher", icon: "layout-dashboard" },
     { label: "Students", href: "/dashboard/students", icon: "graduation-cap" },
     { label: "My Classes", href: "/dashboard/teacher", icon: "book-open" },
     { label: "Gradebook", href: "/dashboard/teacher", icon: "clipboard-list" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
   parent: [
     { label: "Overview", href: "/dashboard/parent", icon: "layout-dashboard" },
     { label: "My Children", href: "/dashboard/parent", icon: "user-round" },
     { label: "Fees & Payments", href: "/dashboard/parent", icon: "banknote" },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
 };

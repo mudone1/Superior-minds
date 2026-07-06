@@ -2,6 +2,7 @@ import "server-only";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getMessaging, type Messaging } from "firebase-admin/messaging";
 
 /**
  * The Admin SDK must only ever run on the server (API routes, server
@@ -29,3 +30,4 @@ function getAdminApp(): App {
 
 export const adminAuth: Auth = getAuth(getAdminApp());
 export const adminDb: Firestore = getFirestore(getAdminApp());
+export const adminMessaging: Messaging = getMessaging(getAdminApp());

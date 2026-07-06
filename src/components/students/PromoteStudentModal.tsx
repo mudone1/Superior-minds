@@ -5,9 +5,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { CLASS_LEVELS } from "@/lib/data/classLevels";
+import { listSchoolClasses, listClassArms } from "@/lib/firebase/academic";
 import { promoteStudent, ApiClientError } from "@/lib/api/students";
-import type { Student } from "@/types";
+import type { ClassArm, SchoolClass, Student } from "@/types";
 
 interface PromoteStudentModalProps {
   open: boolean;
@@ -17,6 +17,8 @@ interface PromoteStudentModalProps {
 }
 
 export function PromoteStudentModal({ open, onClose, onSaved, student }: PromoteStudentModalProps) {
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [arms, setArms] = useState<ClassArm[]>([]);
   const [classLevel, setClassLevel] = useState("");
   const [arm, setArm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +26,30 @@ export function PromoteStudentModal({ open, onClose, onSaved, student }: Promote
 
   useEffect(() => {
     if (open && student) {
-      const currentIndex = CLASS_LEVELS.indexOf(student.class);
-      const nextClass = currentIndex >= 0 ? CLASS_LEVELS[currentIndex + 1] : undefined;
-      setClassLevel(nextClass ?? student.class);
-      setArm(student.arm);
       setError(null);
+      listSchoolClasses()
+        .then((c) => {
+          const sorted = c.slice().sort((a, b) => a.order - b.order);
+          setClasses(sorted);
+          const currentIndex = sorted.findIndex((cls) => cls.name === student.class);
+          const nextClass = currentIndex >= 0 ? sorted[currentIndex + 1] : undefined;
+          setClassLevel(nextClass?.name ?? student.class);
+        })
+        .catch(() => setError("Couldn't load classes."));
+      setArm(student.arm);
     }
   }, [open, student]);
+
+  useEffect(() => {
+    const match = classes.find((c) => c.name === classLevel);
+    if (!match) {
+      setArms([]);
+      return;
+    }
+    listClassArms(match.id)
+      .then(setArms)
+      .catch(() => setArms([]));
+  }, [classLevel, classes]);
 
   async function handleSubmit() {
     if (!student) return;
@@ -61,21 +80,25 @@ export function PromoteStudentModal({ open, onClose, onSaved, student }: Promote
           <Select
             label="New Class"
             value={classLevel}
-            onChange={(e) => setClassLevel(e.target.value)}
-            options={CLASS_LEVELS.map((c) => ({ value: c, label: c }))}
+            onChange={(e) => {
+              setClassLevel(e.target.value);
+              setArm("");
+            }}
+            options={classes.map((c) => ({ value: c.name, label: c.name }))}
           />
-          <input
+          <Select
+            label="New Arm"
             value={arm}
             onChange={(e) => setArm(e.target.value)}
-            placeholder="Arm"
-            aria-label="Arm"
-            className="h-11 w-full rounded-md border border-ink-300/60 bg-white px-3 text-sm text-ink transition-colors focus:border-indigo focus:outline-none focus:ring-2 focus:ring-indigo/20"
+            options={arms.map((a) => ({ value: a.name, label: a.name }))}
+            placeholder={arms.length === 0 ? "No arms set up for this class" : "Select an arm"}
+            disabled={arms.length === 0}
           />
           <div className="flex justify-end gap-3">
             <Button variant="ghost" onClick={onClose} type="button">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} isLoading={submitting}>
+            <Button onClick={handleSubmit} isLoading={submitting} disabled={!classLevel || !arm}>
               Promote
             </Button>
           </div>
