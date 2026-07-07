@@ -52,9 +52,8 @@ export const DASHBOARD_NAV: Record<UserRole, DashboardNavItem[]> = {
   ],
   teacher: [
     { label: "Overview", href: "/dashboard/teacher", icon: "layout-dashboard" },
-    { label: "Students", href: "/dashboard/students", icon: "graduation-cap" },
-    { label: "My Classes", href: "/dashboard/teacher", icon: "book-open" },
-    { label: "Gradebook", href: "/dashboard/teacher", icon: "clipboard-list" },
+    { label: "My Students", href: "/dashboard/teacher/students", icon: "graduation-cap" },
+    { label: "Gradebook", href: "/dashboard/teacher/gradebook", icon: "clipboard-list" },
     { label: "Notifications", href: "/dashboard/notifications", icon: "bell" },
   ],
   parent: [

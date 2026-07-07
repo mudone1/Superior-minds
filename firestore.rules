@@ -166,6 +166,19 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
 
+    // Student scores (CA/Exam entries). Read is staff-only — no student
+    // or parent visibility until Phase 5 actually "publishes" a result.
+    // Every write goes through /api/teacher/scores/*, which verifies the
+    // calling teacher is actually assigned to the subject/arm in
+    // question — replicating that relational check in rules would need
+    // Firestore lookups this collection's auto-generated assignment IDs
+    // don't support directly, so the API route is the real boundary here,
+    // same as every other write in this app.
+    match /studentScores/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
     // Everything else defaults closed until later phases define the
     // classes / grades / fees collections explicitly.
     match /{document=**} {

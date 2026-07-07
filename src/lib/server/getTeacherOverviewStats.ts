@@ -8,6 +8,13 @@ export interface TeacherOverviewStats {
   studentCount: number;
 }
 
+export interface TeacherClassSummary {
+  armId: string;
+  className: string;
+  armName: string;
+  subjects: string[];
+}
+
 /**
  * A teacher's "classes" are the distinct (class, arm) pairs they appear in
  * across `teacherSubjectAssignments` — one teacher can be assigned several
@@ -48,4 +55,30 @@ export async function getTeacherOverviewStats(teacherUid: string): Promise<Teach
     classCount: distinctArms.size,
     studentCount: counts.reduce((sum, c) => sum + c, 0),
   };
+}
+
+/** Groups a teacher's subject assignments by arm, for the overview page's "My Classes" list. */
+export async function getTeacherClassSummaries(teacherUid: string): Promise<TeacherClassSummary[]> {
+  const snap = await adminDb
+    .collection(TEACHER_SUBJECT_ASSIGNMENTS_COLLECTION)
+    .where("teacherUid", "==", teacherUid)
+    .get();
+
+  const byArm = new Map<string, TeacherClassSummary>();
+  snap.forEach((doc) => {
+    const data = doc.data();
+    const existing = byArm.get(data.armId);
+    if (existing) {
+      existing.subjects.push(data.subjectName);
+    } else {
+      byArm.set(data.armId, {
+        armId: data.armId,
+        className: data.className,
+        armName: data.armName,
+        subjects: [data.subjectName],
+      });
+    }
+  });
+
+  return Array.from(byArm.values()).sort((a, b) => `${a.className} ${a.armName}`.localeCompare(`${b.className} ${b.armName}`));
 }
